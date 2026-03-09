@@ -242,3 +242,8 @@ schools:
     name: "成都航空职业技术大学"
     initial: "C"
     resource_folder: "CAPU"
+
+  - id: "GSMC"
+    name: "甘肃医学院"
+    initial: "G"
+    resource_folder: "GSMC"
