@@ -302,3 +302,8 @@ schools:
     name: "成都银杏酒店管理学院"
     initial: "C"
     resource_folder: "YXHMC"
+
+  - id: "HNIU"
+    name: "湖南信息职业技术学院"
+    initial: "H"
+    resource_folder: "HNIU"  
