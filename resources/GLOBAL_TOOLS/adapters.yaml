@@ -23,3 +23,11 @@ adapters:
     import_url: "https://i.wakeup.fun/"
     maintainer: "星河欲转"
     description: "首先,先去wakeup获取分享口令，然后点击本适配，进入后不需要管网页，点击\"执行导入\"输入你刚刚获取的分享口令就好\n 特别鸣谢 钴-60 提供的思路"      
+
+  - adapter_id: "StarLink"
+    adapter_name: "星链课表分享码导入"
+    category: "GENERAL_TOOL"
+    asset_js_path: "starlink.js"
+    import_url: "https://api.starlinkkb.cn/"
+    maintainer: "星河欲转"
+    description: "首先,先去星链课表获取分享码，然后点击本适配，进入后不需要管网页，点击\"执行导入\"输入你刚刚获取的分享码就好"        
