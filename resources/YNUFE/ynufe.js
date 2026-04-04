@@ -314,22 +314,27 @@ function parseScheduleHtml(html) {
         
         console.log(`\n解析完成,共得到 ${result.length} 条课程记录(去重前)`);
         
-        // 合并完全相同的课程(去重)
-        const courseKeys = new Set();
+        // 合并完全相同的课程(去重)，并合并仅周次不同的同节次课程
+        const courseMap = new Map();
         
         result.forEach(course => {
-            // 生成课程唯一标识: 名称+老师+地点+星期+节次+周次
-            const key = `${course.name}|${course.teacher}|${course.position}|${course.day}|${course.sections.join(',')}|${course.weeks.join(',')}`;
+            // 生成课程唯一标识: 名称+老师+地点+星期+节次（不包含周次）
+            const mergeKey = `${course.name}|${course.teacher}|${course.position}|${course.day}|${course.sections.join(',')}`;
             
-            if (!courseKeys.has(key)) {
-                courseKeys.add(key);
-                uniqueCourses.push(course);
+            if (!courseMap.has(mergeKey)) {
+                // 深拷贝一份以避免引用问题
+                courseMap.set(mergeKey, { ...course, weeks: [...course.weeks] });
             } else {
-                console.log(`  跳过重复课程: ${course.name} (${course.teacher})`);
+                console.log(`  合并同时间不同周次的课程: ${course.name} (${course.teacher})`);
+                const existingCourse = courseMap.get(mergeKey);
+                // 合并并去重然后重新排序周次
+                existingCourse.weeks = [...new Set([...existingCourse.weeks, ...course.weeks])].sort((a, b) => a - b);
             }
         });
         
-        console.log(`去重后剩余 ${uniqueCourses.length} 条课程记录`);
+        uniqueCourses = Array.from(courseMap.values());
+        
+        console.log(`合并/去重后剩余 ${uniqueCourses.length} 条课程记录`);
         
     } catch (err) {
         console.error('解析课程表出错:', err);
