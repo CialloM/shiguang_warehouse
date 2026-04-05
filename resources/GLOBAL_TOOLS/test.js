@@ -4,26 +4,6 @@
 
 //避免多次执行脚本出现已声明报错，文件中无全局常量
 // ==================== 普通工具函数 ====================
-// 将对象编码为Base64字符串
-function encodeParams(obj) {
-  return btoa(encodeURIComponent(JSON.stringify(obj)));
-}
-// 将Base64字符串解码为对象
-function decodeParams(str) {
-  if (!str) return null;
-  try {
-    return JSON.parse(decodeURIComponent(atob(str)));
-  } catch (e) {
-    return null;
-  }
-}
-// 从当前URL中获取指定参数的值
-function getUrlParam(key) {
-  const fullUrl = window.location.href;
-  const paramStr = fullUrl.includes('?') ? fullUrl.split('?')[1] : '';
-  const params = new URLSearchParams(paramStr);
-  return params.get(key);
-}
 // 解析周次字符串，转换为具体的周次数组
 function parseWeeks(weekStr) {
     if (!weekStr) return [];
@@ -64,7 +44,7 @@ function sortCourses(courseList) {
         a.name.localeCompare(b.name, 'zh-CN')
     );
 }
-//获取整理好的课程类别的课程数量（名字相同即）
+//获取整理好的课程类别的课程数量（名字相同即是同一门）
 function getCourseNum(courseList) {
     if (!Array.isArray(courseList)) return 0;
     const uniqueCourseNames = new Set(courseList.map(course => course.name));
@@ -210,7 +190,6 @@ async function autoGetKey1() {
 
 // ==================== 实验课请求 ====================
 async function fetchExperimentCourses(studentId,yearterm,authorization) {
-    AndroidBridge.showToast("正在获取实验课数据...");
     try {
         const url = "https://scjx2.yibinu.edu.cn/teach/teach/stuTime/listStuTimePage";
         const bodyData = {
@@ -326,8 +305,6 @@ async function establishSession() {
 
 //第二步：请求理论课表数据
 async function fetchTheoryCourses(yearTerm, studentId) {
-    AndroidBridge.showToast("正在获取理论课数据...");
-    
     try {
         // 请求课表数据
         const res = await fetch("https://ehall.yibinu.edu.cn/jwapp/sys/wdkb/modules/xskcb/xskcb.do", {
@@ -353,8 +330,6 @@ async function fetchTheoryCourses(yearTerm, studentId) {
 
 //第三步：请求学期信息（开学日期和总周次）
 async function fetchTermInfo(academicYear,term) {
-    AndroidBridge.showToast("正在请求学期信息...");
-    
     try {
         // 请求课表数据
         const res = await fetch("https://ehall.yibinu.edu.cn/jwapp/sys/wdkb/modules/jshkcb/cxjcs.do", {
@@ -442,7 +417,6 @@ function parseTheoryJson(jsonData) {
 // ==================== 保存配置 ====================
 //保存课表信息配置
 async function saveAllCourses(courses) {
-
     try { 
         await window.AndroidBridgePromise.saveImportedCourses(JSON.stringify(courses, null, 2)); 
         return true; 
@@ -489,19 +463,19 @@ async function importTimeSlots() {
 }
 
 // ==================== 用户交互 ====================
-//智慧教学大厅首次执行提示
+//智慧校园大厅首次执行提示
 async function promptUserToStart() {
     return await window.AndroidBridgePromise.showAlert(
         "宜宾学院课表导入",
-        "导入流程：1.在智慧教学大厅执行脚本 → 2.在实验教学登录页执行脚本 → 3.等待执行完成",
-        "开始导入"
+        "导入流程:1.在智慧校园内执行脚本→2.在实验教学系统执行脚本→3.等待执行完成.\n所有数据采用请求方式,可以不在课表页面执行,如果您担心,也可以在课表页面确认后再执行脚本;执行中途取消后可以再次点击执行",
+        "开始导入",
     );
 }
 //理论课及学期信息保存后提示
 async function askImportExperiment(theoryNum,startDate) {
-    const options = ["继续导入实验课", "仅保存理论课", "终止此次流程"];
+    const options = ["继续导入实验课", "仅保存理论课"];
     return await window.AndroidBridgePromise.showSingleSelection(
-        `当前进度:理论课${theoryNum}门,开学日期:${startDate!==undefined?startDate:"未知"}`,
+        `获取进度:理论课${theoryNum}门,开学日期${startDate!==undefined?startDate:"未知"}`,
         JSON.stringify(options),
         0
     );
@@ -532,7 +506,7 @@ async function selectSemester() {
 async function reminderMotion() {
     return await window.AndroidBridgePromise.showAlert(
         "操作提醒",
-        "请在跳转页面后就再次点击底部的|执行导入|，不要点击登录！否则会丢失数据",
+        "在跳转页面后就可以再次点击底部的|执行导入|，不需要登录;\n当然，你也可以登录后去确认你的实验课表，然后再执行导入",
         "知道了"
     );
 }
@@ -540,23 +514,23 @@ async function reminderMotion() {
 // ==================== 页面判断 ====================
 //判断是否在统一认证登录界面
 function isTheoryLoginPage() {
-    return window.location.href.includes("authserver.yibinu.edu.cn/login");
+    return window.location.href.includes("authserver.yibinu.edu.cn/authserver/login");
 }
-//判断是否在实践教育教学系统登录界面
+//判断是否在实践教育教学系统
 function isExpLoginPage() {
-    return window.location.href.includes("scjx2.yibinu.edu.cn/TEACH/#/login");
+    return window.location.href.includes("scjx2.yibinu.edu.cn");
 }
 
 // ==================== 1. 理论课流程 ====================
 async function runImportFlow() {
     if (isTheoryLoginPage()) { 
-        AndroidBridge.showToast("请先登录智慧教学系统！"); 
+        AndroidBridge.showToast("请先登录智慧校园！"); 
         return; 
     }
 
     const studentId = localStorage.getItem('ampUserId');
     if (!studentId) {
-        AndroidBridge.showToast("请确保已在智慧教学大厅主页");
+        AndroidBridge.showToast("请确保已登录智慧校园！");
         return;
     }
 
@@ -571,6 +545,7 @@ async function runImportFlow() {
     const academicYear = `${startYear}-${Number(startYear)+1}`
     const yearTerm = `${academicYear}-${term}`;
 
+    AndroidBridge.showToast("稍等一下哦,信息获取中");
     await establishSession();
     const [theoryRes, termInfoRes] = await Promise.all([
         fetchTheoryCourses(yearTerm, studentId),
@@ -582,9 +557,9 @@ async function runImportFlow() {
     
     const theoryNum = getCourseNum(theoryCourses)
     const needExp = await askImportExperiment(theoryNum,semesterStartDate);
-
+    if(needExp === null) return;
     if (needExp === 0) {
-        // 将学号也传递给实验课页面
+        // 将数据传递给实验课页面
         await reminderMotion();
         const params = {
             theoryCourses,
@@ -593,13 +568,9 @@ async function runImportFlow() {
             ...(semesterTotalWeeks !== undefined && { semesterTotalWeeks }),
             ...(semesterStartDate !== undefined && { semesterStartDate })
         };
-        const jumpUrl = `https://scjx2.yibinu.edu.cn/TEACH/#/login?courseData=${encodeParams(params)}`;
-
+        const jumpUrl = `https://scjx2.yibinu.edu.cn/TEACH/#/login`;
+        window.name = JSON.stringify(params)
         window.location.href = jumpUrl;
-        return;
-    }
-    if(needExp === 2){
-        AndroidBridge.showToast("已取消此次导入");
         return;
     }
 
@@ -612,21 +583,20 @@ async function runImportFlow() {
 
 // ==================== 2. 实验课流程 ====================
 async function runExpAutoMerge() {
-    const paramData = getUrlParam('courseData');
-    const decodeData = decodeParams(paramData);
-    if (!decodeData) {
-        AndroidBridge.showToast("未检测到理论课参数，请重新从理论课流程开始！");
-        return;
-    }
-    const { theoryCourses, yearTerm, studentId,semesterTotalWeeks,semesterStartDate } = decodeData;
-    if (!theoryCourses || !yearTerm || !studentId) {
-        AndroidBridge.showToast("参数不完整，请重新导入理论课！");
-        return;
-    }
-    
     try {
+        const decodeData = JSON.parse(window.name);
+        console.log("数据："+window.name)
+        if (!decodeData) {
+            AndroidBridge.showToast("未检测到理论课参数，请重新从理论课流程开始！");
+            return;
+        }
+        const { theoryCourses, yearTerm, studentId,semesterTotalWeeks,semesterStartDate } = decodeData;
+        if (!theoryCourses || !yearTerm || !studentId) {
+            AndroidBridge.showToast("参数不完整，请重新导入理论课！");
+            return;
+        }
+        
         const key1 = await autoGetKey1();
-
         const expCoursesRes = await fetchExperimentCourses(studentId,yearTerm,key1);
         const expCourses=parseExperimentCoursesData(expCoursesRes)
         const allCourses = sortCourses([...theoryCourses, ...expCourses]);
