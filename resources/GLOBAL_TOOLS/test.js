@@ -467,7 +467,7 @@ async function importTimeSlots() {
 async function promptUserToStart() {
     return await window.AndroidBridgePromise.showAlert(
         "宜宾学院课表导入",
-        "导入流程:1.在智慧校园内执行脚本→2.在实验教学系统执行脚本→3.等待执行完成.\n所有数据采用请求方式,可以不在课表页面执行,如果您担心,也可以在课表页面确认后再执行脚本;执行中途取消后可以再次点击执行",
+        "导入流程:1.在智慧校园内执行脚本→2.在实验教学系统再次执行脚本→3.等待执行完成。\n所有数据采用请求方式，可以不在课表页面执行，如果您担心，也可以在课表页面确认后再执行脚本；执行中途取消后可以再次点击执行",
         "开始导入",
     );
 }
@@ -505,9 +505,9 @@ async function selectSemester() {
 //准备跳转实验页面的操作提醒
 async function reminderMotion() {
     return await window.AndroidBridgePromise.showAlert(
-        "操作提醒",
-        "在跳转页面后就可以再次点击底部的|执行导入|，不需要登录;\n当然，你也可以登录后去确认你的实验课表，然后再执行导入",
-        "知道了"
+        "操作提醒(请认真理解！)",
+        "在跳转页面后就可以再次点击底部的|执行导入|，不需要登录；\n当然，你也可以登录后去确认你的实验课表，然后再执行导入；\n一句话：跳转页面后一定！一定！一定！要再次点击执行导入！",
+        "我已了解下一步操作"
     );
 }
 
@@ -560,7 +560,7 @@ async function runImportFlow() {
     if(needExp === null) return;
     if (needExp === 0) {
         // 将数据传递给实验课页面
-        await reminderMotion();
+        if(!await reminderMotion()) return;
         const params = {
             theoryCourses,
             yearTerm,
